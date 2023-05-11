@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <!-- HÄMTA CSS-fil -->
+  </head>
+  <body>
+    <h1>App > Sök</h1>
+
+    <!-- Sökformulär -->
+    <div class="search-active">
+      <br />
+      <input id="keyword" type="text" />
+      <br />
+      <button id="search">Sök</button>
+    </div>
+
+    <!-- Sökresultat -->
+    <ul id="searchResults"></ul>
+
+    <!-- Redigeringsformulär -->
+    <div class="update-inactive">
+      <label for="book_id">Book ID:</label>
+      <input id="book_id" type="text" name="book_id" autofocus />
+
+      <br />
+
+      <br />
+
+      <!-- DELETE -->
+
+      <button id="btnDelete" class="button-delete" type="submit">Radera</button>
+      <!-- UPDATE -->
+      <label for="author">Författare</label>
+      <input id="author" type="text" name="author" />
+      <br />
+      <label for="title">Titel</label>
+      <input id="title" type="text" name="title" />
+
+      <label for="genre">Genre</label>
+      <input id="genre" type="text" name="genre" />
+
+      <label for="year">År</label>
+      <input id="year" type="text" name="year" />
+
+      <br />
+      <br />
+      <button id="btnUpdate" class="button-update" type="submit">Update</button>
+    </div>
+
+    <script>
+      const btnSearch = document.querySelector("#search");
+      const btnUpdate = document.querySelector("#btnUpdate");
+      const btnDelete = document.querySelector("#btnDelete");
+
+      btnSearch.addEventListener("click", () => {
+        printResults();
+      });
+
+      // KNAPP: Update
+      btnUpdate.addEventListener("click", () => {
+        let author = document.querySelector("#author");
+        let title = document.querySelector("#title");
+        let genre = document.querySelector("#genre");
+        let year = document.querySelector("#year");
+        let book_id = document.querySelector("#book_id");
+
+        const options = {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            author: author.value,
+            title: title.value,
+            genre: genre.value,
+            year: year.value,
+            book_id: book_id.value,
+          }),
+        };
+
+        fetch("http://localhost:3001/customer/edit", options)
+          .then((response) => console.log(response))
+          .catch((error) => console.error(error));
+      });
+
+      // KNAPP: Delete
+      btnDelete.addEventListener("click", () => {
+        let book_id = document.querySelector("#book_id");
+
+        const options = {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            book_id: book_id.value,
+          }),
+        };
+
+        fetch("http://localhost:3001/customer/remove", options)
+          .then((response) => console.log(response))
+          .catch((error) => console.error(error));
+      });
+
+      async function printResults() {
+        const ul = document.querySelector("#searchResults");
+
+        let data = await getResultsByKeyword();
+
+        for (const customer of data) {
+          let li = document.createElement("li");
+          let a = document.createElement("a");
+
+          a.id = customer.book_id;
+          a.innerText =
+            customer.title +
+            " - " +
+            customer.author +
+            " - Antal lånbara böcker: " +
+            customer.book_available +
+            " - Antal utlånade böcker: " +
+            customer.book_loan;
+
+          a.addEventListener("click", () => {
+            ul.innerHTML = "";
+
+            // Fyll i redigeringsformuläret
+            setCurrentCustomer(
+              a.id,
+              customer.title,
+              customer.author,
+              customer.year,
+              customer.genre
+            );
+
+            // Visar redigeringsformuläret
+            displayUpdate();
+          });
+
+          li.appendChild(a);
+          ul.appendChild(li);
+        }
+      }
+
+      function setCurrentCustomer(book_id, title, author, year, genre) {
+        document.querySelector("#book_id").value = book_id;
+
+        document.querySelector("#book_id").value = book_id;
+        document.querySelector("#author").value = author;
+        document.querySelector("#title").value = title;
+        document.querySelector("#genre").value = genre;
+        document.querySelector("#year").value = year;
+      }
+
+      function displayUpdate() {}
+
+      // Hämtar data baserat på sökord
+      async function getResultsByKeyword() {
+        let keyword = document.querySelector("#keyword").value;
+
+        const options = {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        };
+
+        let response = await fetch(
+          "http://localhost:3001/customer/search?" +
+            new URLSearchParams({
+              keyword: keyword,
+            }),
+          options
+        ).catch((error) => {
+          console.error(error);
+        });
+
+        let data = await response.json();
+
+        console.log(data);
+
+        return data;
+      }
+    </script>
+  </body>
+</html>
